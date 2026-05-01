@@ -31,16 +31,20 @@
   nav {
     background: white;
     border-bottom: 2px solid var(--pastel-pink);
+    position: sticky;
+    top: 0;
+    z-index: 2000;
+  }
+
+  .nav-content {
+    max-width: 1100px;
+    margin: 0 auto;
     padding: 10px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
   }
 
-  /* Logo 與標題樣式 */
   .nav-logo-link {
     display: flex;
     align-items: center;
@@ -48,7 +52,7 @@
     gap: 10px;
   }
   .nav-logo-img {
-    height: 32px; /* 您可以根據 logo 形狀調整高度 */
+    height: 32px;
     width: auto;
     object-fit: contain;
   }
@@ -66,13 +70,13 @@
   .menu-drawer {
     position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
     background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    z-index: 2000; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 3000; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 40px 20px;
   }
   .menu-drawer.active { right: 0; }
   .menu-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-    z-index: 1500; display: none;
+    z-index: 2500; display: none;
   }
   .menu-drawer a {
     display: block; width: 100%; padding: 12px; margin-bottom: 10px;
@@ -89,8 +93,69 @@
     gap: 30px;
   }
 
+  /* 新增：預覽標籤文字樣式 */
+  .preview-label {
+    display: block;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--accent-pink);
+    margin-top: 8px;
+  }
+
   @media (max-width: 900px) {
-    .app-container { grid-template-columns: 1fr; }
+    .app-container { grid-template-columns: 1fr; margin-top: 15px; }
+    .nav-title { font-size: 1rem; }
+    .nav-content { padding: 8px 15px; }
+
+    body.has-image .main-content {
+      position: sticky;
+      top: 52px;
+      z-index: 1000;
+      background: rgba(250, 250, 250, 0.95);
+      padding: 10px 0;
+      border-bottom: 1px solid var(--pastel-pink);
+    }
+    
+    body.has-image .main-content .card {
+      margin-bottom: 0;
+      padding: 5px;
+      box-shadow: none;
+      background: transparent;
+      border: none;
+    }
+
+    body.has-image .card-header { display: none; }
+
+    body.has-image .preview-result-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      align-items: flex-start;
+    }
+
+    /* 手機版預覽容器與標籤 */
+    body.has-image .preview-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    body.has-image .preview-wrapper, 
+    body.has-image #resultImg {
+      width: 120px !important;
+      height: 120px !important;
+      margin: 0 !important;
+      flex-shrink: 0;
+    }
+
+    body.has-image .preview-label {
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
+    
+    .download-link-box { text-align: center; margin-top: 5px; }
+    .download-link-box .btn-main { padding: 8px; font-size: 0.8rem; }
   }
 
   .card {
@@ -139,7 +204,7 @@
 
   #cropModal {
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-    z-index: 3000; align-items: center; justify-content: center; padding: 20px;
+    z-index: 4000; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-content { background: white; padding: 20px; border-radius: 16px; max-width: 500px; width: 100%; }
   .crop-box { max-height: 350px; margin-bottom: 15px; overflow: hidden; }
@@ -149,18 +214,20 @@
   .radio-pill input:checked + label { background: white; color: var(--accent-pink); }
   .radio-pill input { display: none; }
 
-  #resultImg { width: 100%; border-radius: 12px; margin-top: 15px; border: 2px solid var(--pastel-pink); }
+  #resultImg { width: 100%; border-radius: 12px; border: 2px solid var(--pastel-pink); display: none; }
 </style>
 </head>
-<body>
+<body id="body">
 
 <nav>
-  <a href="#" class="nav-logo-link">
-    <img id="logoImg" src="logo.svg" alt="Logo" class="nav-logo-img">
-    <div class="nav-title">POKE POKE 戳臉產生器</div>
-  </a>
-  <div class="hamburger" onclick="toggleMenu(true)">
-    <span></span><span></span><span></span>
+  <div class="nav-content">
+    <a href="#" class="nav-logo-link">
+      <img id="logoImg" src="YOUR_LOGO_URL_HERE" alt="Logo" class="nav-logo-img">
+      <div class="nav-title">POKE POKE 戳臉產生器</div>
+    </a>
+    <div class="hamburger" onclick="toggleMenu(true)">
+      <span></span><span></span><span></span>
+    </div>
   </div>
 </nav>
 
@@ -174,21 +241,31 @@
 
 <div class="app-container">
   <div class="main-content">
-    <div class="card">
-      <div class="card-header">🖼️ 圖片預覽 (點擊框內上傳)</div>
-      <div class="preview-wrapper" onclick="document.getElementById('fileInput').click()">
-        <div id="placeholder">請點擊此處上傳圖片</div>
-        <canvas id="previewCanvas"></canvas>
+    <div class="preview-result-group">
+      <!-- 預覽區塊 -->
+      <div class="card" id="previewCard">
+        <div class="card-header">🖼️ 圖片預覽 (點擊框內上傳)</div>
+        <div class="preview-container">
+          <div class="preview-wrapper" onclick="document.getElementById('fileInput').click()">
+            <div id="placeholder">請點擊此處上傳圖片</div>
+            <canvas id="previewCanvas"></canvas>
+          </div>
+          <span class="preview-label" id="labelPreview" style="display:none">預覽</span>
+        </div>
       </div>
-    </div>
 
-    <div class="card" id="resultCard" style="display:none">
-      <div class="card-header">✨ 生成結果</div>
-      <img id="resultImg" alt="Generated GIF">
-      <div style="margin-top:15px">
-        <a id="downloadBtn" download="poke-face.gif" style="text-decoration:none">
-          <button class="btn-main">💾 下載 GIF 圖片</button>
-        </a>
+      <!-- 結果區塊 -->
+      <div class="card" id="resultCard" style="display:none">
+        <div class="card-header">✨ 生成結果</div>
+        <div class="preview-container">
+          <img id="resultImg" alt="Generated GIF">
+          <span class="preview-label">生成結果</span>
+        </div>
+        <div class="download-link-box">
+          <a id="downloadBtn" download="poke-face.gif" style="text-decoration:none">
+            <button class="btn-main" style="margin-top:10px">💾 下載 GIF</button>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -264,7 +341,7 @@
 let userImg = null;
 let cropper = null;
 let animReq = null;
-let originalFileName = "pokepoke.gif"; // 預設檔名
+let originalFileName = "pokepoke.gif";
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
@@ -278,9 +355,8 @@ fileInput.onchange = (e) => {
   const file = e.target.files[0];
   if(!file) return;
   
-  // 取得原檔名並組合
   const nameParts = file.name.split('.');
-  if (nameParts.length > 1) nameParts.pop(); // 移除原副檔名
+  if (nameParts.length > 1) nameParts.pop();
   originalFileName = nameParts.join('.') + "_pokepoke.gif";
 
   const reader = new FileReader();
@@ -299,7 +375,9 @@ function applyCrop() {
   userImg.onload = () => {
     document.getElementById('placeholder').style.display = 'none';
     canvas.style.display = 'block';
+    document.getElementById('labelPreview').style.display = 'block'; // 顯示預覽標籤
     document.getElementById('genBtn').disabled = false;
+    document.getElementById('body').classList.add('has-image');
     startPreview();
   };
   userImg.src = c.toDataURL();
@@ -427,13 +505,14 @@ async function generateGif() {
       const downloadBtn = document.getElementById('downloadBtn');
       
       resImg.src = url;
+      resImg.style.display = 'block';
       downloadBtn.href = url;
       downloadBtn.download = originalFileName; 
       document.getElementById('resultCard').style.display = 'block';
       
-      resImg.onload = () => {
+      if(window.innerWidth > 900) {
         document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
-      };
+      }
 
       genBtn.disabled = false;
       loader.style.display = 'none';
