@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>脫粉聲明書產生器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background: #E9D5FF; }
+        .bg-main { background: linear-gradient(180deg, #E9D5FF 0%, #E0F2FE 100%); }
+        .btn-gradient { background: linear-gradient(90deg, #9333EA 0%, #DB2777 100%); }
+        .tag-active { background-color: #F472B6 !important; color: white !important; border-color: #F472B6 !important; }
+        .seal-img { width: 100px; height: 100px; transform: rotate(-10deg); opacity: 0.9; }
+        .dashed-upload { border: 2px dashed #E2E8F0; transition: all 0.3s; }
+        .dashed-upload:hover { border-color: #A855F7; background: #FAF5FF; }
+    </style>
+</head>
+<body class="bg-main min-h-screen flex justify-center p-4">
+
+    <div id="step-edit" class="w-full max-w-md animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <div class="text-purple-700 font-bold flex items-center text-sm">
+                <span class="mr-1">✦</span> 脫粉聲明書產生器
+            </div>
+            <div class="bg-purple-100 text-purple-500 text-[10px] px-3 py-1 rounded-full border border-purple-200">道德認證</div>
+        </div>
+
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-black text-purple-600 mb-2 tracking-tight">脫粉，要有儀式感 ✦</h1>
+            <p class="text-gray-500 text-[11px]">讓每一次告別都值得被紀念</p>
+            <div class="mt-2 space-y-1">
+                <div class="inline-block bg-white/60 rounded-full px-4 py-1 text-[10px] text-green-500 shadow-sm border border-white">歐爸常常說我是猩猩，所以我不開心。</div>
+                <br>
+                <div class="inline-block bg-white/60 rounded-full px-4 py-1 text-[10px] text-blue-500 shadow-sm border border-white">我擔吃咖哩飯居然會辦在一起!! 無法接受😭</div>
+            </div>
+        </div>
+
+        <div class="space-y-4 mb-20">
+            <div class="bg-white rounded-3xl p-5 shadow-sm">
+                <h3 class="font-bold text-purple-800 flex items-center mb-4 text-sm">
+                    <span class="bg-purple-600 w-1 h-4 mr-2 block"></span> 聲明人
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1">聲明人暱稱*</label>
+                        <input id="input-name" type="text" placeholder="請輸入你的暱稱" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1">脫粉日期時間*</label>
+                        <div class="relative">
+                            <input id="input-date" type="datetime-local" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3 text-sm">
+                            <button onclick="resetDate()" class="absolute right-3 top-3 text-[10px] text-purple-400 font-bold">重設</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1">大頭照 (選填)</label>
+                        <div onclick="document.getElementById('input-avatar').click()" class="dashed-upload rounded-2xl p-6 text-center cursor-pointer">
+                            <div class="bg-purple-600 text-white w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">+</div>
+                            <div class="text-[10px] text-purple-600 font-medium">上傳照片</div>
+                            <input id="input-avatar" type="file" accept="image/*" class="hidden">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-5 shadow-sm">
+                <h3 class="font-bold text-purple-800 flex items-center mb-4 text-sm">
+                    <span class="bg-purple-600 w-1 h-4 mr-2 block"></span> 脫粉對象
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1">脫粉的團體 / 藝人名稱*</label>
+                        <input id="input-idol" type="text" placeholder="例：某某偶像團體" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-400
