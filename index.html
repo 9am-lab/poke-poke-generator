@@ -40,6 +40,18 @@
     z-index: 1000;
   }
 
+  /* Logo 與標題樣式 */
+  .nav-logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 10px;
+  }
+  .nav-logo-img {
+    height: 32px; /* 您可以根據 logo 形狀調整高度 */
+    width: auto;
+    object-fit: contain;
+  }
   .nav-title { font-weight: bold; color: var(--accent-pink); font-size: 1.2rem; }
 
   .hamburger {
@@ -143,7 +155,10 @@
 <body>
 
 <nav>
-  <div class="nav-title">POKE POKE 戳臉產生器</div>
+  <a href="#" class="nav-logo-link">
+    <img id="logoImg" src="logo.svg" alt="Logo" class="nav-logo-img">
+    <div class="nav-title">POKE POKE 戳臉產生器</div>
+  </a>
   <div class="hamburger" onclick="toggleMenu(true)">
     <span></span><span></span><span></span>
   </div>
@@ -413,7 +428,7 @@ async function generateGif() {
       
       resImg.src = url;
       downloadBtn.href = url;
-      downloadBtn.download = originalFileName; // 設定動態檔名
+      downloadBtn.download = originalFileName; 
       document.getElementById('resultCard').style.display = 'block';
       
       resImg.onload = () => {
