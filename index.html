@@ -1,78 +1,415 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>脫粉聲明書產生器</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #E9D5FF; }
-        .bg-main { background: linear-gradient(180deg, #E9D5FF 0%, #E0F2FE 100%); }
-        .btn-gradient { background: linear-gradient(90deg, #9333EA 0%, #DB2777 100%); }
-        .tag-active { background-color: #F472B6 !important; color: white !important; border-color: #F472B6 !important; }
-        .seal-img { width: 100px; height: 100px; transform: rotate(-10deg); opacity: 0.9; }
-        .dashed-upload { border: 2px dashed #E2E8F0; transition: all 0.3s; }
-        .dashed-upload:hover { border-color: #A855F7; background: #FAF5FF; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poke Poke 戳戳臉</title>
+<!-- 核心函式庫 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+
+<style>
+  :root {
+    --pastel-pink: #FFB7C5;
+    --pastel-blue: #A0E7FF;
+    --pastel-purple: #E0BBE4;
+    --pastel-yellow: #FFF9C4;
+    --accent-pink: #FF85A2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: "PingFang TC", sans-serif; }
+
+  body {
+    background-color: #fafafa;
+    background-image: radial-gradient(var(--pastel-blue) 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: #444;
+    overflow-x: hidden;
+  }
+
+  nav {
+    background: white;
+    border-bottom: 2px solid var(--pastel-pink);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  .nav-title { font-weight: bold; color: var(--accent-pink); font-size: 1.2rem; }
+
+  .hamburger {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px;
+  }
+  .hamburger span { width: 25px; height: 3px; background: var(--accent-pink); border-radius: 2px; }
+
+  .menu-drawer {
+    position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
+    background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    z-index: 2000; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 40px 20px;
+  }
+  .menu-drawer.active { right: 0; }
+  .menu-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 1500; display: none;
+  }
+  .menu-drawer a {
+    display: block; width: 100%; padding: 12px; margin-bottom: 10px;
+    text-decoration: none; color: #444; font-weight: bold;
+    border: 1px solid #eee; border-radius: 8px; text-align: left;
+  }
+
+  .app-container {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 15px;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 30px;
+  }
+
+  @media (max-width: 900px) {
+    .app-container { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+    margin-bottom: 20px;
+  }
+
+  .card-header { font-weight: 800; color: var(--accent-pink); margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+
+  .preview-wrapper {
+    background: #f0f0f0;
+    border-radius: 12px;
+    aspect-ratio: 1/1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    border: 2px dashed #ddd;
+    cursor: pointer;
+  }
+  canvas { max-width: 100%; height: auto; display: none; }
+
+  .control-item { margin-bottom: 18px; }
+  .label-group { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; font-weight: bold; color: #666; }
+  
+  input[type=range] { width: 100%; height: 6px; border-radius: 3px; accent-color: var(--accent-pink); cursor: pointer; }
+
+  .btn-main {
+    width: 100%; padding: 14px; border-radius: 12px; border: none;
+    background: var(--accent-pink); color: white; font-weight: bold;
+    cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(255, 133, 162, 0.3);
+  }
+  .btn-main:disabled { background: #ccc; box-shadow: none; }
+  
+  .btn-secondary {
+    width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #ddd;
+    background: white; color: #666; font-weight: bold; margin-top: 10px;
+    cursor: pointer; transition: 0.2s;
+  }
+  .btn-secondary:hover { background: #f9f9f9; }
+
+  #cropModal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 3000; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-content { background: white; padding: 20px; border-radius: 16px; max-width: 500px; width: 100%; }
+  .crop-box { max-height: 350px; margin-bottom: 15px; overflow: hidden; }
+
+  .radio-pill { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; background: #eee; padding: 4px; border-radius: 10px; }
+  .radio-pill label { text-align: center; padding: 6px; font-size: 0.85rem; border-radius: 7px; cursor: pointer; }
+  .radio-pill input:checked + label { background: white; color: var(--accent-pink); }
+  .radio-pill input { display: none; }
+
+  #resultImg { width: 100%; border-radius: 12px; margin-top: 15px; border: 2px solid var(--pastel-pink); }
+</style>
 </head>
-<body class="bg-main min-h-screen flex justify-center p-4">
+<body>
 
-    <div id="step-edit" class="w-full max-w-md animate-fade-in">
-        <div class="flex justify-between items-center mb-6">
-            <div class="text-purple-700 font-bold flex items-center text-sm">
-                <span class="mr-1">✦</span> 脫粉聲明書產生器
-            </div>
-            <div class="bg-purple-100 text-purple-500 text-[10px] px-3 py-1 rounded-full border border-purple-200">道德認證</div>
+<nav>
+  <div class="nav-title">POKE POKE 戳臉產生器</div>
+  <div class="hamburger" onclick="toggleMenu(true)">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<div class="menu-overlay" onclick="toggleMenu(false)"></div>
+<div class="menu-drawer" id="drawer">
+  <a href="#">Poke Poke 戳戳臉產生器</a>
+  <a href="https://9am-lab.github.io/fan-leave-kit/" target="_blank">粉絲請假卡</a>
+  <a href="https://9am-lab.github.io/unfan/" target="_blank">脫粉聲明書</a>
+    <a href="https://youtu.be/dQw4w9WgXcQ?si=swL6VVW-1STWdulT" target="_blank">點我</a>
+</div>
+
+<div class="app-container">
+  <div class="main-content">
+    <div class="card">
+      <div class="card-header">🖼️ 圖片預覽 (點擊框內上傳)</div>
+      <div class="preview-wrapper" onclick="document.getElementById('fileInput').click()">
+        <div id="placeholder">請點擊此處上傳圖片</div>
+        <canvas id="previewCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none">
+      <div class="card-header">✨ 生成結果</div>
+      <img id="resultImg" alt="Generated GIF">
+      <div style="margin-top:15px">
+        <a id="downloadBtn" download="poke-face.gif" style="text-decoration:none">
+          <button class="btn-main">💾 下載 GIF 圖片</button>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+
+    <div class="card">
+      <div class="card-header">⚙️ 效果設定：手部編輯</div>
+      
+      <div class="control-item">
+        <div class="label-group"><span>手部模式</span></div>
+        <div class="radio-pill">
+          <input type="radio" id="hBoth" name="hMode" value="both" checked><label for="hBoth">雙手</label>
+          <input type="radio" id="hLeft" name="hMode" value="left"><label for="hLeft">左手</label>
+          <input type="radio" id="hRight" name="hMode" value="right"><label for="hRight">右手</label>
         </div>
+      </div>
 
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-black text-purple-600 mb-2 tracking-tight">脫粉，要有儀式感 ✦</h1>
-            <p class="text-gray-500 text-[11px]">讓每一次告別都值得被紀念</p>
-            <div class="mt-2 space-y-1">
-                <div class="inline-block bg-white/60 rounded-full px-4 py-1 text-[10px] text-green-500 shadow-sm border border-white">歐爸常常說我是猩猩，所以我不開心。</div>
-                <br>
-                <div class="inline-block bg-white/60 rounded-full px-4 py-1 text-[10px] text-blue-500 shadow-sm border border-white">我擔吃咖哩飯居然會辦在一起!! 無法接受😭</div>
-            </div>
-        </div>
+      <div class="control-item">
+        <div class="label-group"><span>水平位置</span><span id="vX">0</span></div>
+        <input type="range" id="offsetX" min="-50" max="150" value="0">
+      </div>
 
-        <div class="space-y-4 mb-20">
-            <div class="bg-white rounded-3xl p-5 shadow-sm">
-                <h3 class="font-bold text-purple-800 flex items-center mb-4 text-sm">
-                    <span class="bg-purple-600 w-1 h-4 mr-2 block"></span> 聲明人
-                </h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-[10px] text-gray-400 mb-1">聲明人暱稱*</label>
-                        <input id="input-name" type="text" placeholder="請輸入你的暱稱" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-gray-400 mb-1">脫粉日期時間*</label>
-                        <div class="relative">
-                            <input id="input-date" type="datetime-local" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3 text-sm">
-                            <button onclick="resetDate()" class="absolute right-3 top-3 text-[10px] text-purple-400 font-bold">重設</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-gray-400 mb-1">大頭照 (選填)</label>
-                        <div onclick="document.getElementById('input-avatar').click()" class="dashed-upload rounded-2xl p-6 text-center cursor-pointer">
-                            <div class="bg-purple-600 text-white w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">+</div>
-                            <div class="text-[10px] text-purple-600 font-medium">上傳照片</div>
-                            <input id="input-avatar" type="file" accept="image/*" class="hidden">
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="control-item">
+        <div class="label-group"><span>垂直位置</span><span id="vY">50%</span></div>
+        <input type="range" id="offsetY" min="0" max="100" value="50">
+      </div>
 
-            <div class="bg-white rounded-3xl p-5 shadow-sm">
-                <h3 class="font-bold text-purple-800 flex items-center mb-4 text-sm">
-                    <span class="bg-purple-600 w-1 h-4 mr-2 block"></span> 脫粉對象
-                </h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-[10px] text-gray-400 mb-1">脫粉的團體 / 藝人名稱*</label>
-                        <input id="input-idol" type="text" placeholder="例：某某偶像團體" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-gray-400
+      <div class="control-item">
+        <div class="label-group"><span>旋轉角度</span><span id="vRot">0°</span></div>
+        <input type="range" id="rotate" min="-90" max="90" value="0">
+      </div>
+
+      <div class="control-item">
+        <div class="label-group"><span>手指大小</span><span id="vSize">80px</span></div>
+        <input type="range" id="fSize" min="40" max="150" value="80">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">🎨 效果設定：圖片編輯</div>
+      
+      <div class="control-item">
+        <div class="label-group"><span>戳戳頻率 (速度)</span><span id="vSpeed">1x</span></div>
+        <input type="range" id="speed" min="0.5" max="4" step="0.1" value="1">
+      </div>
+
+      <div class="control-item">
+        <div class="label-group"><span>左右擠壓幅度</span><span id="vSquish">15%</span></div>
+        <input type="range" id="squishAmt" min="0" max="50" step="1" value="15">
+      </div>
+    </div>
+
+    <button id="genBtn" class="btn-main" disabled onclick="generateGif()">🎨 生成 GIF</button>
+    <button class="btn-secondary" onclick="location.reload()">🔄 重新開始</button>
+    
+    <div id="loading" style="display:none; text-align:center; margin-top:10px; color:var(--accent-pink); font-weight:bold">
+      處理中... <span id="progress">0%</span>
+    </div>
+  </div>
+</div>
+
+<div id="cropModal">
+  <div class="modal-content">
+    <h3 style="margin-bottom:15px">裁切圖片範圍</h3>
+    <div class="crop-box"><img id="cropImg"></div>
+    <button class="btn-main" onclick="applyCrop()">確認裁切</button>
+  </div>
+</div>
+
+<script>
+let userImg = null;
+let cropper = null;
+let animReq = null;
+const canvas = document.getElementById('previewCanvas');
+const ctx = canvas.getContext('2d');
+
+function toggleMenu(open) {
+  document.getElementById('drawer').classList.toggle('active', open);
+  document.querySelector('.menu-overlay').style.display = open ? 'block' : 'none';
+}
+
+const fileInput = document.getElementById('fileInput');
+fileInput.onchange = (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('cropImg').src = ev.target.result;
+    document.getElementById('cropModal').style.display = 'flex';
+    if(cropper) cropper.destroy();
+    cropper = new Cropper(document.getElementById('cropImg'), { aspectRatio: 1, viewMode: 1 });
+  };
+  reader.readAsDataURL(file);
+};
+
+function applyCrop() {
+  const c = cropper.getCroppedCanvas({ width: 400, height: 400 });
+  userImg = new Image();
+  userImg.onload = () => {
+    document.getElementById('placeholder').style.display = 'none';
+    canvas.style.display = 'block';
+    document.getElementById('genBtn').disabled = false;
+    startPreview();
+  };
+  userImg.src = c.toDataURL();
+  document.getElementById('cropModal').style.display = 'none';
+}
+
+function getSettings() {
+  return {
+    mode: document.querySelector('input[name="hMode"]:checked').value,
+    speed: parseFloat(document.getElementById('speed').value),
+    squish: parseFloat(document.getElementById('squishAmt').value) / 100,
+    x: parseInt(document.getElementById('offsetX').value),
+    y: parseInt(document.getElementById('offsetY').value) / 100,
+    rot: parseInt(document.getElementById('rotate').value) * Math.PI / 180,
+    size: parseInt(document.getElementById('fSize').value)
+  };
+}
+
+const sync = (id, vid, unit="") => {
+  const el = document.getElementById(id);
+  el.oninput = () => document.getElementById(vid).innerText = el.value + unit;
+};
+sync('speed', 'vSpeed', 'x');
+sync('squishAmt', 'vSquish', '%');
+sync('offsetX', 'vX');
+sync('offsetY', 'vY', '%');
+sync('rotate', 'vRot', '°');
+sync('fSize', 'vSize', 'px');
+
+function draw(prog, tCtx, tCanvas) {
+  if(!userImg) return;
+  const s = getSettings();
+  const W = 400, H = 400;
+  tCanvas.width = W; tCanvas.height = H;
+
+  const bounce = Math.sin(prog * Math.PI * 2) * 0.5 + 0.5;
+  const currentSquish = 1 - (bounce * s.squish);
+  const xOffset = (W * (1 - currentSquish)) / 2;
+
+  tCtx.clearRect(0,0,W,H);
+  
+  tCtx.save();
+  tCtx.translate(xOffset, 0);
+  tCtx.scale(currentSquish, 1);
+  tCtx.drawImage(userImg, 0, 0, W, H);
+  tCtx.restore();
+
+  const renderHand = (side) => {
+    if(s.mode !== 'both' && s.mode !== side) return;
+    const isL = side === 'left';
+    tCtx.save();
+    
+    // 計算手指座標
+    const hX = isL ? (s.x - 10 + bounce*35) : (W - s.x + 10 - bounce*35);
+    const hY = s.y * H;
+    
+    tCtx.translate(hX, hY);
+    // 左右手旋轉方向鏡像
+    tCtx.rotate(isL ? s.rot : -s.rot);
+    tCtx.font = `${s.size}px serif`;
+    tCtx.textAlign = 'center';
+    tCtx.textBaseline = 'middle';
+    tCtx.fillText(isL ? '👉' : '👈', 0, 0);
+    tCtx.restore();
+  };
+
+  renderHand('left');
+  renderHand('right');
+}
+
+function startPreview() {
+  if(animReq) cancelAnimationFrame(animReq);
+  const loop = (time) => {
+    const s = getSettings();
+    const duration = 1000 / s.speed;
+    const prog = (time % duration) / duration;
+    draw(prog, ctx, canvas);
+    animReq = requestAnimationFrame(loop);
+  };
+  animReq = requestAnimationFrame(loop);
+}
+
+async function generateGif() {
+  const s = getSettings();
+  const genBtn = document.getElementById('genBtn');
+  const loader = document.getElementById('loading');
+  const progText = document.getElementById('progress');
+
+  genBtn.disabled = true;
+  loader.style.display = 'block';
+  progText.innerText = "0%";
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: 400,
+    height: 400,
+    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+  });
+
+  const totalFrames = 15;
+  const frameDelay = Math.round(60 / s.speed);
+
+  for(let i=0; i<totalFrames; i++) {
+    const tmpC = document.createElement('canvas');
+    tmpC.width = 400; tmpC.height = 400;
+    draw(i/totalFrames, tmpC.getContext('2d'), tmpC);
+    gif.addFrame(tmpC, {delay: frameDelay, copy: true});
+  }
+
+  gif.on('progress', p => {
+    progText.innerText = Math.round(p * 100) + "%";
+  });
+
+  gif.on('finished', (blob) => {
+    const url = URL.createObjectURL(blob);
+    document.getElementById('resultImg').src = url;
+    document.getElementById('downloadBtn').href = url;
+    document.getElementById('resultCard').style.display = 'block';
+    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+    genBtn.disabled = false;
+    loader.style.display = 'none';
+  });
+
+  try {
+    gif.render();
+  } catch(e) {
+    alert("GIF 生成失敗");
+    genBtn.disabled = false;
+    loader.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
