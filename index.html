@@ -154,7 +154,7 @@
   <a href="#">Poke Poke 戳戳臉產生器</a>
   <a href="https://9am-lab.github.io/fan-leave-kit/" target="_blank">粉絲請假卡</a>
   <a href="https://9am-lab.github.io/unfan/" target="_blank">脫粉聲明書</a>
-    <a href="https://youtu.be/dQw4w9WgXcQ?si=swL6VVW-1STWdulT" target="_blank">點我</a>
+  <a href="https://youtu.be/dQw4w9WgXcQ?si=swL6VVW-1STWdulT" target="_blank">點我</a>
 </div>
 
 <div class="app-container">
@@ -250,7 +250,8 @@ let userImg = null;
 let cropper = null;
 let animReq = null;
 const canvas = document.getElementById('previewCanvas');
-const ctx = canvas.getContext('2d');
+// 增加 willReadFrequently 屬性優化效能
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
 function toggleMenu(open) {
   document.getElementById('drawer').classList.toggle('active', open);
@@ -329,13 +330,9 @@ function draw(prog, tCtx, tCanvas) {
     if(s.mode !== 'both' && s.mode !== side) return;
     const isL = side === 'left';
     tCtx.save();
-    
-    // 計算手指座標
     const hX = isL ? (s.x - 10 + bounce*35) : (W - s.x + 10 - bounce*35);
     const hY = s.y * H;
-    
     tCtx.translate(hX, hY);
-    // 左右手旋轉方向鏡像
     tCtx.rotate(isL ? s.rot : -s.rot);
     tCtx.font = `${s.size}px serif`;
     tCtx.textAlign = 'center';
@@ -371,7 +368,7 @@ async function generateGif() {
   progText.innerText = "0%";
 
   const gif = new GIF({
-    workers: 2,
+    workers: 2, // 限制 worker 數量減少通訊中斷錯誤
     quality: 10,
     width: 400,
     height: 400,
@@ -384,7 +381,9 @@ async function generateGif() {
   for(let i=0; i<totalFrames; i++) {
     const tmpC = document.createElement('canvas');
     tmpC.width = 400; tmpC.height = 400;
-    draw(i/totalFrames, tmpC.getContext('2d'), tmpC);
+    // 為臨時 Canvas 也加上 willReadFrequently
+    const tmpCtx = tmpC.getContext('2d', { willReadFrequently: true });
+    draw(i/totalFrames, tmpCtx, tmpC);
     gif.addFrame(tmpC, {delay: frameDelay, copy: true});
   }
 
@@ -405,7 +404,8 @@ async function generateGif() {
   try {
     gif.render();
   } catch(e) {
-    alert("GIF 生成失敗");
+    console.error(e);
+    alert("GIF 生成失敗，請確認是否允許存取 Worker 或重整再試。");
     genBtn.disabled = false;
     loader.style.display = 'none';
   }
