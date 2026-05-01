@@ -18,7 +18,7 @@
     --accent-pink: #FF85A2;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: "PingFang TC", sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
 
   body {
     background-color: #fafafa;
@@ -313,25 +313,19 @@ function draw(prog, tCtx, tCanvas) {
   const W = 400, H = 400;
   tCanvas.width = W; tCanvas.height = H;
 
-  // 動態計算
-  const bounce = Math.sin(prog * Math.PI * 2) * 0.5 + 0.5; // 0 到 1
+  const bounce = Math.sin(prog * Math.PI * 2) * 0.5 + 0.5; 
   const currentSquish = 1 - (bounce * s.squish);
   
-  // 新增：震動感計算 (當 bounce 越大時，震動越劇烈)
-  // 使用高頻 sine 波模擬震盪
   const shakeIntensity = bounce * s.squish * 15; 
   const shakeX = Math.sin(prog * Math.PI * 20) * shakeIntensity;
-  const shakeRot = Math.cos(prog * Math.PI * 15) * (s.squish * 0.15); // 旋轉震盪
+  const shakeRot = Math.cos(prog * Math.PI * 15) * (s.squish * 0.15); 
 
   tCtx.clearRect(0,0,W,H);
   
   tCtx.save();
-  // 將中心點移至畫布中央進行變換
   tCtx.translate(W/2 + shakeX, H/2);
   tCtx.rotate(shakeRot);
   tCtx.scale(currentSquish, 1);
-  
-  // 繪製臉部 (回到原點)
   tCtx.drawImage(userImg, -W/2, -H/2, W, H);
   tCtx.restore();
 
@@ -339,7 +333,6 @@ function draw(prog, tCtx, tCanvas) {
     if(s.mode !== 'both' && s.mode !== side) return;
     const isL = side === 'left';
     tCtx.save();
-    // 手部也會跟著 bounce 移動
     const hX = isL ? (s.x - 10 + bounce*35) : (W - s.x + 10 - bounce*35);
     const hY = s.y * H;
     tCtx.translate(hX, hY);
@@ -390,13 +383,15 @@ async function generateGif() {
       workerScript: workerUrl
     });
 
-    const totalFrames = 20; // 稍微增加格數讓震動更細膩
-    const frameDelay = Math.round(50 / s.speed);
+    // 關鍵修正：根據速度動態計算總影格與延遲
+    const duration = 1000 / s.speed; // 單次循環總毫秒
+    const frameDelay = Math.max(33, 40 / s.speed); // 限制最低延遲不低於33ms，否則GIF會卡住
+    const totalFrames = Math.floor(duration / frameDelay);
 
     for(let i=0; i<totalFrames; i++) {
       const tmpC = document.createElement('canvas');
       tmpC.width = 400; tmpC.height = 400;
-      const tmpCtx = tmpC.getContext('2d', { willReadFrequently: true });
+      const tmpCtx = tmpC.getContext('2d');
       draw(i/totalFrames, tmpCtx, tmpC);
       gif.addFrame(tmpC, {delay: frameDelay, copy: true});
     }
@@ -407,10 +402,15 @@ async function generateGif() {
 
     gif.on('finished', (blob) => {
       const url = URL.createObjectURL(blob);
-      document.getElementById('resultImg').src = url;
+      const resImg = document.getElementById('resultImg');
+      resImg.src = url;
       document.getElementById('downloadBtn').href = url;
       document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+      
+      resImg.onload = () => {
+        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+      };
+
       genBtn.disabled = false;
       loader.style.display = 'none';
       URL.revokeObjectURL(workerUrl);
