@@ -250,7 +250,6 @@ let userImg = null;
 let cropper = null;
 let animReq = null;
 const canvas = document.getElementById('previewCanvas');
-// 增加 willReadFrequently 屬性優化效能
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
 function toggleMenu(open) {
@@ -367,45 +366,50 @@ async function generateGif() {
   loader.style.display = 'block';
   progText.innerText = "0%";
 
-  const gif = new GIF({
-    workers: 2, // 限制 worker 數量減少通訊中斷錯誤
-    quality: 10,
-    width: 400,
-    height: 400,
-    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
-  });
-
-  const totalFrames = 15;
-  const frameDelay = Math.round(60 / s.speed);
-
-  for(let i=0; i<totalFrames; i++) {
-    const tmpC = document.createElement('canvas');
-    tmpC.width = 400; tmpC.height = 400;
-    // 為臨時 Canvas 也加上 willReadFrequently
-    const tmpCtx = tmpC.getContext('2d', { willReadFrequently: true });
-    draw(i/totalFrames, tmpCtx, tmpC);
-    gif.addFrame(tmpC, {delay: frameDelay, copy: true});
-  }
-
-  gif.on('progress', p => {
-    progText.innerText = Math.round(p * 100) + "%";
-  });
-
-  gif.on('finished', (blob) => {
-    const url = URL.createObjectURL(blob);
-    document.getElementById('resultImg').src = url;
-    document.getElementById('downloadBtn').href = url;
-    document.getElementById('resultCard').style.display = 'block';
-    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
-    genBtn.disabled = false;
-    loader.style.display = 'none';
-  });
-
   try {
+    // 解決 CORS 跨網域 Worker 問題
+    const resp = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
+    const blob = await resp.blob();
+    const workerUrl = URL.createObjectURL(blob);
+
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      width: 400,
+      height: 400,
+      workerScript: workerUrl
+    });
+
+    const totalFrames = 15;
+    const frameDelay = Math.round(60 / s.speed);
+
+    for(let i=0; i<totalFrames; i++) {
+      const tmpC = document.createElement('canvas');
+      tmpC.width = 400; tmpC.height = 400;
+      const tmpCtx = tmpC.getContext('2d', { willReadFrequently: true });
+      draw(i/totalFrames, tmpCtx, tmpC);
+      gif.addFrame(tmpC, {delay: frameDelay, copy: true});
+    }
+
+    gif.on('progress', p => {
+      progText.innerText = Math.round(p * 100) + "%";
+    });
+
+    gif.on('finished', (blob) => {
+      const url = URL.createObjectURL(blob);
+      document.getElementById('resultImg').src = url;
+      document.getElementById('downloadBtn').href = url;
+      document.getElementById('resultCard').style.display = 'block';
+      document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+      genBtn.disabled = false;
+      loader.style.display = 'none';
+      URL.revokeObjectURL(workerUrl); // 釋放記憶體
+    });
+
     gif.render();
   } catch(e) {
     console.error(e);
-    alert("GIF 生成失敗，請確認是否允許存取 Worker 或重整再試。");
+    alert("GIF 生成失敗，請檢查網路連線後重試。");
     genBtn.disabled = false;
     loader.style.display = 'none';
   }
