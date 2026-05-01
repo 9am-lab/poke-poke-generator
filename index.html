@@ -367,7 +367,7 @@ async function generateGif() {
   progText.innerText = "0%";
 
   try {
-    // 解決 CORS 跨網域 Worker 問題
+    // 【關鍵修正】解決 CORS 跨網域 Worker 限制
     const resp = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
     const blob = await resp.blob();
     const workerUrl = URL.createObjectURL(blob);
@@ -386,6 +386,7 @@ async function generateGif() {
     for(let i=0; i<totalFrames; i++) {
       const tmpC = document.createElement('canvas');
       tmpC.width = 400; tmpC.height = 400;
+      // 使用 willReadFrequently 優化讀取 Canvas 效能
       const tmpCtx = tmpC.getContext('2d', { willReadFrequently: true });
       draw(i/totalFrames, tmpCtx, tmpC);
       gif.addFrame(tmpC, {delay: frameDelay, copy: true});
