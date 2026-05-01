@@ -249,6 +249,7 @@
 let userImg = null;
 let cropper = null;
 let animReq = null;
+let originalFileName = "pokepoke.gif"; // 預設檔名
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
@@ -261,6 +262,12 @@ const fileInput = document.getElementById('fileInput');
 fileInput.onchange = (e) => {
   const file = e.target.files[0];
   if(!file) return;
+  
+  // 取得原檔名並組合
+  const nameParts = file.name.split('.');
+  if (nameParts.length > 1) nameParts.pop(); // 移除原副檔名
+  originalFileName = nameParts.join('.') + "_pokepoke.gif";
+
   const reader = new FileReader();
   reader.onload = (ev) => {
     document.getElementById('cropImg').src = ev.target.result;
@@ -383,9 +390,8 @@ async function generateGif() {
       workerScript: workerUrl
     });
 
-    // 關鍵修正：根據速度動態計算總影格與延遲
-    const duration = 1000 / s.speed; // 單次循環總毫秒
-    const frameDelay = Math.max(33, 40 / s.speed); // 限制最低延遲不低於33ms，否則GIF會卡住
+    const duration = 1000 / s.speed;
+    const frameDelay = Math.max(33, 40 / s.speed);
     const totalFrames = Math.floor(duration / frameDelay);
 
     for(let i=0; i<totalFrames; i++) {
@@ -403,8 +409,11 @@ async function generateGif() {
     gif.on('finished', (blob) => {
       const url = URL.createObjectURL(blob);
       const resImg = document.getElementById('resultImg');
+      const downloadBtn = document.getElementById('downloadBtn');
+      
       resImg.src = url;
-      document.getElementById('downloadBtn').href = url;
+      downloadBtn.href = url;
+      downloadBtn.download = originalFileName; // 設定動態檔名
       document.getElementById('resultCard').style.display = 'block';
       
       resImg.onload = () => {
