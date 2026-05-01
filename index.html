@@ -93,7 +93,6 @@
     gap: 30px;
   }
 
-  /* 新增：預覽標籤文字樣式 */
   .preview-label {
     display: block;
     text-align: center;
@@ -134,7 +133,6 @@
       align-items: flex-start;
     }
 
-    /* 手機版預覽容器與標籤 */
     body.has-image .preview-container {
       display: flex;
       flex-direction: column;
@@ -150,7 +148,7 @@
     }
 
     body.has-image .preview-label {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       margin-top: 4px;
     }
     
@@ -214,7 +212,14 @@
   .radio-pill input:checked + label { background: white; color: var(--accent-pink); }
   .radio-pill input { display: none; }
 
-  #resultImg { width: 100%; border-radius: 12px; border: 2px solid var(--pastel-pink); display: none; }
+  /* 調整：結果圖加上可點擊提示縮圖 */
+  #resultImg { 
+    width: 100%; 
+    border-radius: 12px; 
+    border: 2px solid var(--pastel-pink); 
+    display: none; 
+    cursor: zoom-in; 
+  }
 </style>
 </head>
 <body id="body">
@@ -242,7 +247,6 @@
 <div class="app-container">
   <div class="main-content">
     <div class="preview-result-group">
-      <!-- 預覽區塊 -->
       <div class="card" id="previewCard">
         <div class="card-header">🖼️ 圖片預覽 (點擊框內上傳)</div>
         <div class="preview-container">
@@ -254,12 +258,12 @@
         </div>
       </div>
 
-      <!-- 結果區塊 -->
       <div class="card" id="resultCard" style="display:none">
         <div class="card-header">✨ 生成結果</div>
         <div class="preview-container">
-          <img id="resultImg" alt="Generated GIF">
-          <span class="preview-label">生成結果</span>
+          <!-- 點擊圖片會開啟新視窗瀏覽 -->
+          <img id="resultImg" alt="Generated GIF" onclick="openImageInNewTab()">
+          <span class="preview-label" id="labelResult">生成結果 <span style="font-size: 0.7rem; font-weight: normal;">(點擊放大)</span></span>
         </div>
         <div class="download-link-box">
           <a id="downloadBtn" download="poke-face.gif" style="text-decoration:none">
@@ -342,12 +346,21 @@ let userImg = null;
 let cropper = null;
 let animReq = null;
 let originalFileName = "pokepoke.gif";
+let currentGifBlobUrl = null; // 用於儲存目前的 Blob URL
+
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
 function toggleMenu(open) {
   document.getElementById('drawer').classList.toggle('active', open);
   document.querySelector('.menu-overlay').style.display = open ? 'block' : 'none';
+}
+
+// 點擊圖片開啟新視窗
+function openImageInNewTab() {
+  if (currentGifBlobUrl) {
+    window.open(currentGifBlobUrl, '_blank');
+  }
 }
 
 const fileInput = document.getElementById('fileInput');
@@ -375,7 +388,7 @@ function applyCrop() {
   userImg.onload = () => {
     document.getElementById('placeholder').style.display = 'none';
     canvas.style.display = 'block';
-    document.getElementById('labelPreview').style.display = 'block'; // 顯示預覽標籤
+    document.getElementById('labelPreview').style.display = 'block';
     document.getElementById('genBtn').disabled = false;
     document.getElementById('body').classList.add('has-image');
     startPreview();
@@ -500,13 +513,16 @@ async function generateGif() {
     });
 
     gif.on('finished', (blob) => {
-      const url = URL.createObjectURL(blob);
+      // 移除舊的 URL 避免記憶體洩漏
+      if (currentGifBlobUrl) URL.revokeObjectURL(currentGifBlobUrl);
+      
+      currentGifBlobUrl = URL.createObjectURL(blob);
       const resImg = document.getElementById('resultImg');
       const downloadBtn = document.getElementById('downloadBtn');
       
-      resImg.src = url;
+      resImg.src = currentGifBlobUrl;
       resImg.style.display = 'block';
-      downloadBtn.href = url;
+      downloadBtn.href = currentGifBlobUrl;
       downloadBtn.download = originalFileName; 
       document.getElementById('resultCard').style.display = 'block';
       
