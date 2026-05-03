@@ -212,7 +212,7 @@
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
     z-index: 4000; align-items: center; justify-content: center; padding: 20px;
   }
-  .modal-content { background: white; padding: 20px; border-radius: 16px; max-width: 500px; width: 100%; }
+  .modal-content-crop { background: white; padding: 20px; border-radius: 16px; max-width: 500px; width: 100%; }
   .crop-box { max-height: 350px; margin-bottom: 15px; overflow: hidden; }
 
   .radio-pill { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; background: #eee; padding: 4px; border-radius: 10px; }
@@ -220,13 +220,58 @@
   .radio-pill input:checked + label { background: white; color: var(--accent-pink); }
   .radio-pill input { display: none; }
 
-  /* 調整：結果圖加上可點擊提示縮圖 */
   #resultImg { 
     width: 100%; 
     border-radius: 12px; 
     border: 2px solid var(--pastel-pink); 
     display: none; 
     cursor: zoom-in; 
+  }
+
+  /* --- 新增：大圖層相關樣式 --- */
+  .modal {
+    display: none; 
+    position: fixed;
+    z-index: 5000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.95);
+    cursor: zoom-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .modal-content {
+    margin: auto;
+    display: block;
+    width: auto;
+    max-width: 90%;
+    max-height: 80%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+    /* 核心：允許 iOS 長按圖片 */
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
+  }
+  .close-modal {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .modal-caption {
+    position: absolute;
+    bottom: 5%;
+    width: 100%;
+    text-align: center;
+    color: #ccc;
+    font-size: 0.9rem;
   }
 </style>
 </head>
@@ -269,7 +314,6 @@
       <div class="card" id="resultCard" style="display:none">
         <div class="card-header">✨ 生成結果</div>
         <div class="preview-container">
-          <!-- 點擊圖片會開啟新視窗瀏覽 -->
           <img id="resultImg" alt="Generated GIF" onclick="openImageInNewTab()">
           <span class="preview-label" id="labelResult">生成結果 <span style="font-size: 0.7rem; font-weight: normal;">(點擊放大)</span></span>
         </div>
@@ -342,11 +386,17 @@
 </div>
 
 <div id="cropModal">
-  <div class="modal-content">
+  <div class="modal-content-crop">
     <h3 style="margin-bottom:15px">裁切圖片範圍</h3>
     <div class="crop-box"><img id="cropImg"></div>
     <button class="btn-main" onclick="applyCrop()">確認裁切</button>
   </div>
+</div>
+
+<div id="imageModal" class="modal" onclick="closeModal()">
+  <span class="close-modal">&times;</span>
+  <img class="modal-content" id="modalImg" onclick="event.stopPropagation()">
+  <div class="modal-caption">長按圖片可儲存至相簿 / 點擊空白處關閉</div>
 </div>
 
 <script>
@@ -354,7 +404,7 @@ let userImg = null;
 let cropper = null;
 let animReq = null;
 let originalFileName = "pokepoke.gif";
-let currentGifBlobUrl = null; // 用於儲存目前的 Blob URL
+let currentGifBlobUrl = null;
 
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -364,11 +414,23 @@ function toggleMenu(open) {
   document.querySelector('.menu-overlay').style.display = open ? 'block' : 'none';
 }
 
-// 點擊圖片開啟新視窗
+// 修改：開啟大圖層
 function openImageInNewTab() {
   if (currentGifBlobUrl) {
-    window.open(currentGifBlobUrl, '_blank');
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImg");
+    modal.style.display = "block";
+    modalImg.src = currentGifBlobUrl;
+    // 禁止背景捲動
+    document.body.style.overflow = "hidden";
   }
+}
+
+// 新增：關閉大圖層
+function closeModal() {
+  document.getElementById("imageModal").style.display = "none";
+  // 恢復背景捲動
+  document.body.style.overflow = "auto";
 }
 
 const fileInput = document.getElementById('fileInput');
@@ -521,7 +583,6 @@ async function generateGif() {
     });
 
     gif.on('finished', (blob) => {
-      // 移除舊的 URL 避免記憶體洩漏
       if (currentGifBlobUrl) URL.revokeObjectURL(currentGifBlobUrl);
       
       currentGifBlobUrl = URL.createObjectURL(blob);
