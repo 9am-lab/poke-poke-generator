@@ -402,7 +402,7 @@ let userImg = null;
 let cropper = null;
 let animReq = null;
 let originalFileName = "pokepoke.gif";
-let currentGifDataUrl = null; // 改名以符合實際用途
+let currentGifDataUrl = null; 
 
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -549,8 +549,8 @@ async function generateGif() {
 
   try {
     const resp = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
-    const blob = await resp.blob();
-    const workerUrl = URL.createObjectURL(blob);
+    const workerBlob = await resp.blob();
+    const workerUrl = URL.createObjectURL(workerBlob);
 
     const gif = new GIF({
       workers: 2,
@@ -577,20 +577,25 @@ async function generateGif() {
     });
 
     gif.on('finished', (blob) => {
-      // 使用 FileReader 將 Blob 轉換為 Base64
+      // 重點優化：將生成的 Blob 包裝成正確的 MIME 類型後轉為 Data URL
+      const gifBlob = new Blob([blob], { type: 'image/gif' });
       const reader = new FileReader();
-      reader.readAsDataURL(blob);
+      
       reader.onloadend = () => {
         const base64data = reader.result;
-        currentGifDataUrl = base64data; // 儲存 Base64 字串
+        currentGifDataUrl = base64data; 
         
         const resImg = document.getElementById('resultImg');
         const downloadBtn = document.getElementById('downloadBtn');
         
+        // 更新 UI
         resImg.src = base64data;
         resImg.style.display = 'block';
+        
+        // 更新下載連結
         downloadBtn.href = base64data;
         downloadBtn.download = originalFileName; 
+        
         document.getElementById('resultCard').style.display = 'block';
         
         if(window.innerWidth > 900) {
@@ -601,6 +606,8 @@ async function generateGif() {
         loader.style.display = 'none';
         URL.revokeObjectURL(workerUrl);
       };
+      
+      reader.readAsDataURL(gifBlob);
     });
 
     gif.render();
