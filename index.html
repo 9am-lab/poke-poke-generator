@@ -226,10 +226,9 @@
     border: 2px solid var(--pastel-pink); 
     display: none; 
     cursor: zoom-in; 
-    /* 核心：確保 iOS 長按選單正常彈出 */
-    -webkit-touch-callout: default !important;
   }
 
+  /* --- 新增：大圖層相關樣式 --- */
   .modal {
     display: none; 
     position: fixed;
@@ -253,9 +252,9 @@
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: 8px;
+    /* 核心：允許 iOS 長按圖片 */
     -webkit-user-select: auto !important;
     user-select: auto !important;
-    -webkit-touch-callout: default !important;
   }
   .close-modal {
     position: absolute;
@@ -295,6 +294,7 @@
   <a href="#">Poke Poke 戳戳臉產生器</a>
   <a href="https://9am-lab.github.io/fan-leave-kit/" target="_blank">粉絲請假卡</a>
   <a href="https://9am-lab.github.io/unfan/" target="_blank">脫粉聲明書</a>
+  <a href="https://youtu.be/dQw4w9WgXcQ?si=swL6VVW-1STWdulT" target="_blank">點我</a>
 </div>
 
 <div class="app-container">
@@ -315,11 +315,11 @@
         <div class="card-header">✨ 生成結果</div>
         <div class="preview-container">
           <img id="resultImg" alt="Generated GIF" onclick="openImageInNewTab()">
-          <span class="preview-label" id="labelResult">生成結果 <span id="mobileHint" style="font-size: 0.7rem; font-weight: normal;">(點擊放大)</span></span>
+          <span class="preview-label" id="labelResult">生成結果 <span style="font-size: 0.7rem; font-weight: normal;">(點擊放大)</span></span>
         </div>
         <div class="download-link-box">
           <a id="downloadBtn" download="poke-face.gif" style="text-decoration:none">
-            <button class="btn-main" id="btnActionLabel" style="margin-top:10px">💾 下載 GIF</button>
+            <button class="btn-main" style="margin-top:10px">💾 下載 GIF</button>
           </a>
         </div>
       </div>
@@ -404,7 +404,7 @@ let userImg = null;
 let cropper = null;
 let animReq = null;
 let originalFileName = "pokepoke.gif";
-let currentGifUrl = null; 
+let currentGifBlobUrl = null;
 
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -414,18 +414,22 @@ function toggleMenu(open) {
   document.querySelector('.menu-overlay').style.display = open ? 'block' : 'none';
 }
 
+// 修改：開啟大圖層
 function openImageInNewTab() {
-  if (currentGifUrl) {
+  if (currentGifBlobUrl) {
     const modal = document.getElementById("imageModal");
     const modalImg = document.getElementById("modalImg");
     modal.style.display = "block";
-    modalImg.src = currentGifUrl;
+    modalImg.src = currentGifBlobUrl;
+    // 禁止背景捲動
     document.body.style.overflow = "hidden";
   }
 }
 
+// 新增：關閉大圖層
 function closeModal() {
   document.getElementById("imageModal").style.display = "none";
+  // 恢復背景捲動
   document.body.style.overflow = "auto";
 }
 
@@ -551,8 +555,8 @@ async function generateGif() {
 
   try {
     const resp = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
-    const workerBlob = await resp.blob();
-    const workerUrl = URL.createObjectURL(workerBlob);
+    const blob = await resp.blob();
+    const workerUrl = URL.createObjectURL(blob);
 
     const gif = new GIF({
       workers: 2,
@@ -579,38 +583,16 @@ async function generateGif() {
     });
 
     gif.on('finished', (blob) => {
-      // 1. 核心優化：使用 Blob URL 代替 Base64，解決 iOS Chrome 長按存成靜態圖的問題
-      if (currentGifUrl) URL.revokeObjectURL(currentGifUrl);
-      const gifUrl = URL.createObjectURL(blob);
-      currentGifUrl = gifUrl;
-
+      if (currentGifBlobUrl) URL.revokeObjectURL(currentGifBlobUrl);
+      
+      currentGifBlobUrl = URL.createObjectURL(blob);
       const resImg = document.getElementById('resultImg');
       const downloadBtn = document.getElementById('downloadBtn');
-      const mobileHint = document.getElementById('mobileHint');
-      const btnLabel = document.getElementById('btnActionLabel');
-
-      resImg.src = gifUrl;
-      resImg.style.display = 'block';
-
-      // 2. 判斷是否為 iOS Chrome (CriOS)
-      const isIOSChrome = /CriOS/i.test(navigator.userAgent);
       
-      if (isIOSChrome) {
-          // iOS Chrome 幾乎不支援 <a> 標籤觸發 Blob 下載，改為引導模式
-          btnLabel.innerText = "↗️ 開啟大圖長按儲存";
-          downloadBtn.onclick = (e) => {
-              e.preventDefault();
-              openImageInNewTab();
-          };
-          mobileHint.innerHTML = "(請點擊開啟大圖長按儲存)";
-          mobileHint.style.color = "red";
-      } else {
-          // 其他瀏覽器（Safari, Android, PC）維持下載功能
-          downloadBtn.href = gifUrl;
-          downloadBtn.download = originalFileName;
-          downloadBtn.onclick = null;
-      }
-
+      resImg.src = currentGifBlobUrl;
+      resImg.style.display = 'block';
+      downloadBtn.href = currentGifBlobUrl;
+      downloadBtn.download = originalFileName; 
       document.getElementById('resultCard').style.display = 'block';
       
       if(window.innerWidth > 900) {
