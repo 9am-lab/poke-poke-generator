@@ -228,7 +228,6 @@
     cursor: zoom-in; 
   }
 
-  /* --- 新增：大圖層相關樣式 --- */
   .modal {
     display: none; 
     position: fixed;
@@ -252,7 +251,6 @@
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: 8px;
-    /* 核心：允許 iOS 長按圖片 */
     -webkit-user-select: auto !important;
     user-select: auto !important;
   }
@@ -404,7 +402,7 @@ let userImg = null;
 let cropper = null;
 let animReq = null;
 let originalFileName = "pokepoke.gif";
-let currentGifBlobUrl = null;
+let currentGifDataUrl = null; // 改名以符合實際用途
 
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -414,22 +412,18 @@ function toggleMenu(open) {
   document.querySelector('.menu-overlay').style.display = open ? 'block' : 'none';
 }
 
-// 修改：開啟大圖層
 function openImageInNewTab() {
-  if (currentGifBlobUrl) {
+  if (currentGifDataUrl) {
     const modal = document.getElementById("imageModal");
     const modalImg = document.getElementById("modalImg");
     modal.style.display = "block";
-    modalImg.src = currentGifBlobUrl;
-    // 禁止背景捲動
+    modalImg.src = currentGifDataUrl;
     document.body.style.overflow = "hidden";
   }
 }
 
-// 新增：關閉大圖層
 function closeModal() {
   document.getElementById("imageModal").style.display = "none";
-  // 恢復背景捲動
   document.body.style.overflow = "auto";
 }
 
@@ -583,25 +577,30 @@ async function generateGif() {
     });
 
     gif.on('finished', (blob) => {
-      if (currentGifBlobUrl) URL.revokeObjectURL(currentGifBlobUrl);
-      
-      currentGifBlobUrl = URL.createObjectURL(blob);
-      const resImg = document.getElementById('resultImg');
-      const downloadBtn = document.getElementById('downloadBtn');
-      
-      resImg.src = currentGifBlobUrl;
-      resImg.style.display = 'block';
-      downloadBtn.href = currentGifBlobUrl;
-      downloadBtn.download = originalFileName; 
-      document.getElementById('resultCard').style.display = 'block';
-      
-      if(window.innerWidth > 900) {
-        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
-      }
+      // 使用 FileReader 將 Blob 轉換為 Base64
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        const base64data = reader.result;
+        currentGifDataUrl = base64data; // 儲存 Base64 字串
+        
+        const resImg = document.getElementById('resultImg');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        resImg.src = base64data;
+        resImg.style.display = 'block';
+        downloadBtn.href = base64data;
+        downloadBtn.download = originalFileName; 
+        document.getElementById('resultCard').style.display = 'block';
+        
+        if(window.innerWidth > 900) {
+          document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+        }
 
-      genBtn.disabled = false;
-      loader.style.display = 'none';
-      URL.revokeObjectURL(workerUrl);
+        genBtn.disabled = false;
+        loader.style.display = 'none';
+        URL.revokeObjectURL(workerUrl);
+      };
     });
 
     gif.render();
