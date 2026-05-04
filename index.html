@@ -11,8 +11,6 @@
 <meta property="og:image" content="logo_pokepoke.gif"> 
 <meta property="og:url" content="https://9am-lab.github.io/poke-poke-generator/">
 <meta property="og:type" content="website">
-
-<!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-WHZCNYG343"></script>
 <script>
@@ -76,19 +74,21 @@
   }
   .nav-title { font-weight: bold; color: var(--accent-pink); font-size: 1.2rem; }
 
-  /* 語言切換按鈕樣式 */
+  /* 修改：語言切換按鈕在選單中的樣式 */
   .lang-switch {
-    margin-left: auto;
-    margin-right: 15px;
-    padding: 5px 10px;
-    border: 1px solid var(--pastel-pink);
-    border-radius: 20px;
+    display: block;
+    width: 100%;
+    margin-bottom: 20px; /* 與下方連結分開一點 */
+    padding: 10px;
+    border: 2px solid var(--pastel-pink);
+    border-radius: 8px;
     background: white;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: var(--accent-pink);
     font-weight: bold;
     transition: 0.3s;
+    text-align: center;
   }
   .lang-switch:hover { background: var(--pastel-pink); color: white; }
 
@@ -98,6 +98,7 @@
     flex-direction: column;
     gap: 5px;
     padding: 10px;
+    margin-left: auto;
   }
   .hamburger span { width: 25px; height: 3px; background: var(--accent-pink); border-radius: 2px; }
 
@@ -307,7 +308,6 @@
       <img id="logoImg" src="logo.svg" alt="Logo" class="nav-logo-img">
       <div class="nav-title" data-i18n="navTitle">POKE POKE 戳臉產生器</div>
     </a>
-    <button class="lang-switch" onclick="switchLang()">EN / 中文</button>
     <div class="hamburger" onclick="toggleMenu(true)">
       <span></span><span></span><span></span>
     </div>
@@ -316,6 +316,8 @@
 
 <div class="menu-overlay" onclick="toggleMenu(false)"></div>
 <div class="menu-drawer" id="drawer">
+  <button class="lang-switch" onclick="switchLang()">EN / 中文</button>
+  
   <a href="#" data-i18n="menu1">Poke Poke 戳戳臉產生器</a>
   <a href="https://9am-lab.github.io/fan-leave-kit/" target="_blank" data-i18n="menu2">粉絲請假卡</a>
   <a href="https://9am-lab.github.io/unfan/" target="_blank" data-i18n="menu3">脫粉聲明書</a>
@@ -425,7 +427,6 @@
 </div>
 
 <script>
-// --- 多國語系設定 ---
 const i18n = {
   'zh-TW': {
     navTitle: "POKE POKE 戳臉產生器",
@@ -506,11 +507,8 @@ function switchLang() {
       el.innerText = i18n[currentLang][key];
     }
   });
-  // 同步更新 HTML 的 lang 屬性
   document.documentElement.lang = currentLang;
 }
-
-// --- 以下為原始邏輯 ---
 
 let userImg = null;
 let cropper = null;
@@ -545,11 +543,9 @@ const fileInput = document.getElementById('fileInput');
 fileInput.onchange = (e) => {
   const file = e.target.files[0];
   if(!file) return;
-  
   const nameParts = file.name.split('.');
   if (nameParts.length > 1) nameParts.pop();
   originalFileName = nameParts.join('.') + "_pokepoke.gif";
-
   const reader = new FileReader();
   reader.onload = (ev) => {
     document.getElementById('cropImg').src = ev.target.result;
@@ -603,23 +599,18 @@ function draw(prog, tCtx, tCanvas) {
   const s = getSettings();
   const W = 400, H = 400;
   tCanvas.width = W; tCanvas.height = H;
-
   const bounce = Math.sin(prog * Math.PI * 2) * 0.5 + 0.5; 
   const currentSquish = 1 - (bounce * s.squish);
-  
   const shakeIntensity = bounce * s.squish * 15; 
   const shakeX = Math.sin(prog * Math.PI * 20) * shakeIntensity;
   const shakeRot = Math.cos(prog * Math.PI * 15) * (s.squish * 0.15); 
-
   tCtx.clearRect(0,0,W,H);
-  
   tCtx.save();
   tCtx.translate(W/2 + shakeX, H/2);
   tCtx.rotate(shakeRot);
   tCtx.scale(currentSquish, 1);
   tCtx.drawImage(userImg, -W/2, -H/2, W, H);
   tCtx.restore();
-
   const renderHand = (side) => {
     if(s.mode !== 'both' && s.mode !== side) return;
     const isL = side === 'left';
@@ -634,7 +625,6 @@ function draw(prog, tCtx, tCanvas) {
     tCtx.fillText(isL ? '👉' : '👈', 0, 0);
     tCtx.restore();
   };
-
   renderHand('left');
   renderHand('right');
 }
@@ -656,28 +646,17 @@ async function generateGif() {
   const genBtn = document.getElementById('genBtn');
   const loader = document.getElementById('loading');
   const progText = document.getElementById('progress');
-
   genBtn.disabled = true;
   loader.style.display = 'block';
   progText.innerText = "0%";
-
   try {
     const resp = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
     const blob = await resp.blob();
     const workerUrl = URL.createObjectURL(blob);
-
-    const gif = new GIF({
-      workers: 2,
-      quality: 10,
-      width: 400,
-      height: 400,
-      workerScript: workerUrl
-    });
-
+    const gif = new GIF({ workers: 2, quality: 10, width: 400, height: 400, workerScript: workerUrl });
     const duration = 1000 / s.speed;
     const frameDelay = Math.max(33, 40 / s.speed);
     const totalFrames = Math.floor(duration / frameDelay);
-
     for(let i=0; i<totalFrames; i++) {
       const tmpC = document.createElement('canvas');
       tmpC.width = 400; tmpC.height = 400;
@@ -685,33 +664,22 @@ async function generateGif() {
       draw(i/totalFrames, tmpCtx, tmpC);
       gif.addFrame(tmpC, {delay: frameDelay, copy: true});
     }
-
-    gif.on('progress', p => {
-      progText.innerText = Math.round(p * 100) + "%";
-    });
-
+    gif.on('progress', p => { progText.innerText = Math.round(p * 100) + "%"; });
     gif.on('finished', (blob) => {
       if (currentGifBlobUrl) URL.revokeObjectURL(currentGifBlobUrl);
-      
       currentGifBlobUrl = URL.createObjectURL(blob);
       const resImg = document.getElementById('resultImg');
       const downloadBtn = document.getElementById('downloadBtn');
-      
       resImg.src = currentGifBlobUrl;
       resImg.style.display = 'block';
       downloadBtn.href = currentGifBlobUrl;
       downloadBtn.download = originalFileName; 
       document.getElementById('resultCard').style.display = 'block';
-      
-      if(window.innerWidth > 900) {
-        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
-      }
-
+      if(window.innerWidth > 900) { document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' }); }
       genBtn.disabled = false;
       loader.style.display = 'none';
       URL.revokeObjectURL(workerUrl);
     });
-
     gif.render();
   } catch(e) {
     console.error(e);
