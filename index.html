@@ -66,6 +66,22 @@
   }
   .nav-title { font-weight: bold; color: var(--accent-pink); font-size: 1.2rem; }
 
+  /* 語言切換按鈕樣式 */
+  .lang-switch {
+    margin-left: auto;
+    margin-right: 15px;
+    padding: 5px 10px;
+    border: 1px solid var(--pastel-pink);
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--accent-pink);
+    font-weight: bold;
+    transition: 0.3s;
+  }
+  .lang-switch:hover { background: var(--pastel-pink); color: white; }
+
   .hamburger {
     cursor: pointer;
     display: flex;
@@ -228,7 +244,6 @@
     cursor: zoom-in; 
   }
 
-  /* --- 新增：大圖層相關樣式 --- */
   .modal {
     display: none; 
     position: fixed;
@@ -252,7 +267,6 @@
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: 8px;
-    /* 核心：允許 iOS 長按圖片 */
     -webkit-user-select: auto !important;
     user-select: auto !important;
   }
@@ -281,8 +295,9 @@
   <div class="nav-content">
     <a href="#" class="nav-logo-link">
       <img id="logoImg" src="logo.svg" alt="Logo" class="nav-logo-img">
-      <div class="nav-title">POKE POKE 戳臉產生器</div>
+      <div class="nav-title" data-i18n="navTitle">POKE POKE 戳臉產生器</div>
     </a>
+    <button class="lang-switch" onclick="switchLang()">EN / 中文</button>
     <div class="hamburger" onclick="toggleMenu(true)">
       <span></span><span></span><span></span>
     </div>
@@ -291,35 +306,35 @@
 
 <div class="menu-overlay" onclick="toggleMenu(false)"></div>
 <div class="menu-drawer" id="drawer">
-  <a href="#">Poke Poke 戳戳臉產生器</a>
-  <a href="https://9am-lab.github.io/fan-leave-kit/" target="_blank">粉絲請假卡</a>
-  <a href="https://9am-lab.github.io/unfan/" target="_blank">脫粉聲明書</a>
-  <a href="https://youtu.be/dQw4w9WgXcQ?si=swL6VVW-1STWdulT" target="_blank">點我</a>
+  <a href="#" data-i18n="menu1">Poke Poke 戳戳臉產生器</a>
+  <a href="https://9am-lab.github.io/fan-leave-kit/" target="_blank" data-i18n="menu2">粉絲請假卡</a>
+  <a href="https://9am-lab.github.io/unfan/" target="_blank" data-i18n="menu3">脫粉聲明書</a>
+  <a href="https://youtu.be/dQw4w9WgXcQ?si=swL6VVW-1STWdulT" target="_blank" data-i18n="menu4">點我</a>
 </div>
 
 <div class="app-container">
   <div class="main-content">
     <div class="preview-result-group">
       <div class="card" id="previewCard">
-        <div class="card-header">🖼️ 圖片預覽 (點擊框內上傳)</div>
+        <div class="card-header" data-i18n="headerPreview">🖼️ 圖片預覽 (點擊框內上傳)</div>
         <div class="preview-container">
           <div class="preview-wrapper" onclick="document.getElementById('fileInput').click()">
-            <div id="placeholder">請點擊此處上傳圖片</div>
+            <div id="placeholder" data-i18n="uploadPlaceholder">請點擊此處上傳圖片</div>
             <canvas id="previewCanvas"></canvas>
           </div>
-          <span class="preview-label" id="labelPreview" style="display:none">預覽</span>
+          <span class="preview-label" id="labelPreview" style="display:none" data-i18n="labelPreview">預覽</span>
         </div>
       </div>
 
       <div class="card" id="resultCard" style="display:none">
-        <div class="card-header">✨ 生成結果</div>
+        <div class="card-header" data-i18n="headerResult">✨ 生成結果</div>
         <div class="preview-container">
           <img id="resultImg" alt="Generated GIF" onclick="openImageInNewTab()">
-          <span class="preview-label" id="labelResult">生成結果 <span style="font-size: 0.7rem; font-weight: normal;">(點擊放大)</span></span>
+          <span class="preview-label" id="labelResult"><span data-i18n="labelResultText">生成結果</span> <span style="font-size: 0.7rem; font-weight: normal;" data-i18n="labelResultSub">(點擊放大)</span></span>
         </div>
         <div class="download-link-box">
           <a id="downloadBtn" download="poke-face.gif" style="text-decoration:none">
-            <button class="btn-main" style="margin-top:10px">💾 下載 GIF</button>
+            <button class="btn-main" style="margin-top:10px" data-i18n="btnDownload">💾 下載 GIF</button>
           </a>
         </div>
       </div>
@@ -330,76 +345,163 @@
     <input type="file" id="fileInput" accept="image/*" style="display:none">
 
     <div class="card">
-      <div class="card-header">⚙️ 效果設定：手部編輯</div>
+      <div class="card-header" data-i18n="headerHand">⚙️ 效果設定：手部編輯</div>
       
       <div class="control-item">
-        <div class="label-group"><span>手部模式</span></div>
+        <div class="label-group"><span data-i18n="labelHandMode">手部模式</span></div>
         <div class="radio-pill">
-          <input type="radio" id="hBoth" name="hMode" value="both" checked><label for="hBoth">雙手</label>
-          <input type="radio" id="hLeft" name="hMode" value="left"><label for="hLeft">左手</label>
-          <input type="radio" id="hRight" name="hMode" value="right"><label for="hRight">右手</label>
+          <input type="radio" id="hBoth" name="hMode" value="both" checked><label for="hBoth" data-i18n="modeBoth">雙手</label>
+          <input type="radio" id="hLeft" name="hMode" value="left"><label for="hLeft" data-i18n="modeLeft">左手</label>
+          <input type="radio" id="hRight" name="hMode" value="right"><label for="hRight" data-i18n="modeRight">右手</label>
         </div>
       </div>
 
       <div class="control-item">
-        <div class="label-group"><span>水平位置</span><span id="vX">0</span></div>
+        <div class="label-group"><span data-i18n="labelX">水平位置</span><span id="vX">0</span></div>
         <input type="range" id="offsetX" min="-50" max="150" value="0">
       </div>
 
       <div class="control-item">
-        <div class="label-group"><span>垂直位置</span><span id="vY">50%</span></div>
+        <div class="label-group"><span data-i18n="labelY">垂直位置</span><span id="vY">50%</span></div>
         <input type="range" id="offsetY" min="0" max="100" value="50">
       </div>
 
       <div class="control-item">
-        <div class="label-group"><span>旋轉角度</span><span id="vRot">0°</span></div>
+        <div class="label-group"><span data-i18n="labelRot">旋轉角度</span><span id="vRot">0°</span></div>
         <input type="range" id="rotate" min="-90" max="90" value="0">
       </div>
 
       <div class="control-item">
-        <div class="label-group"><span>手指大小</span><span id="vSize">80px</span></div>
+        <div class="label-group"><span data-i18n="labelSize">手指大小</span><span id="vSize">80px</span></div>
         <input type="range" id="fSize" min="40" max="150" value="80">
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header">🎨 效果設定：圖片編輯</div>
+      <div class="card-header" data-i18n="headerImage">🎨 效果設定：圖片編輯</div>
       
       <div class="control-item">
-        <div class="label-group"><span>戳戳頻率 (速度)</span><span id="vSpeed">1x</span></div>
+        <div class="label-group"><span data-i18n="labelSpeed">戳戳頻率 (速度)</span><span id="vSpeed">1x</span></div>
         <input type="range" id="speed" min="0.5" max="4" step="0.1" value="1">
       </div>
 
       <div class="control-item">
-        <div class="label-group"><span>擠壓與震動幅度</span><span id="vSquish">15%</span></div>
+        <div class="label-group"><span data-i18n="labelSquish">擠壓與震動幅度</span><span id="vSquish">15%</span></div>
         <input type="range" id="squishAmt" min="0" max="50" step="1" value="15">
       </div>
     </div>
 
-    <button id="genBtn" class="btn-main" disabled onclick="generateGif()">🎨 生成 GIF</button>
-    <button class="btn-secondary" onclick="location.reload()">🔄 重新開始</button>
+    <button id="genBtn" class="btn-main" disabled onclick="generateGif()" data-i18n="btnGen">🎨 生成 GIF</button>
+    <button class="btn-secondary" onclick="location.reload()" data-i18n="btnRestart">🔄 重新開始</button>
     
     <div id="loading" style="display:none; text-align:center; margin-top:10px; color:var(--accent-pink); font-weight:bold">
-      處理中... <span id="progress">0%</span>
+      <span data-i18n="loadingText">處理中...</span> <span id="progress">0%</span>
     </div>
   </div>
 </div>
 
 <div id="cropModal">
   <div class="modal-content-crop">
-    <h3 style="margin-bottom:15px">裁切圖片範圍</h3>
+    <h3 style="margin-bottom:15px" data-i18n="cropTitle">裁切圖片範圍</h3>
     <div class="crop-box"><img id="cropImg"></div>
-    <button class="btn-main" onclick="applyCrop()">確認裁切</button>
+    <button class="btn-main" onclick="applyCrop()" data-i18n="btnCropConfirm">確認裁切</button>
   </div>
 </div>
 
 <div id="imageModal" class="modal" onclick="closeModal()">
   <span class="close-modal">&times;</span>
   <img class="modal-content" id="modalImg" onclick="event.stopPropagation()">
-  <div class="modal-caption">iOS請使用safari，圖片才會動 / 點擊空白處關閉</div>
+  <div class="modal-caption" data-i18n="iosTip">iOS請使用safari，圖片才會動 / 點擊空白處關閉</div>
 </div>
 
 <script>
+// --- 多國語系設定 ---
+const i18n = {
+  'zh-TW': {
+    navTitle: "POKE POKE 戳臉產生器",
+    menu1: "Poke Poke 戳戳臉產生器",
+    menu2: "粉絲請假卡",
+    menu3: "脫粉聲明書",
+    menu4: "點我",
+    headerPreview: "🖼️ 圖片預覽 (點擊框內上傳)",
+    uploadPlaceholder: "請點擊此處上傳圖片",
+    labelPreview: "預覽",
+    headerResult: "✨ 生成結果",
+    labelResultText: "生成結果",
+    labelResultSub: "(點擊放大)",
+    btnDownload: "💾 下載 GIF",
+    headerHand: "⚙️ 效果設定：手部編輯",
+    labelHandMode: "手部模式",
+    modeBoth: "雙手",
+    modeLeft: "左手",
+    modeRight: "右手",
+    labelX: "水平位置",
+    labelY: "垂直位置",
+    labelRot: "旋轉角度",
+    labelSize: "手指大小",
+    headerImage: "🎨 效果設定：圖片編輯",
+    labelSpeed: "戳戳頻率 (速度)",
+    labelSquish: "擠壓與震動幅度",
+    btnGen: "🎨 生成 GIF",
+    btnRestart: "🔄 重新開始",
+    loadingText: "處理中...",
+    cropTitle: "裁切圖片範圍",
+    btnCropConfirm: "確認裁切",
+    iosTip: "iOS請使用safari，圖片才會動 / 點擊空白處關閉",
+    failMsg: "GIF 生成失敗，請檢查網路連線後重試。"
+  },
+  'en': {
+    navTitle: "Poke Poke Face Generator",
+    menu1: "Poke Poke Face Generator",
+    menu2: "Fan Leave Kit",
+    menu3: "Un-fan Statement",
+    menu4: "Click Me",
+    headerPreview: "🖼️ Preview (Click to upload)",
+    uploadPlaceholder: "Click here to upload an image",
+    labelPreview: "Preview",
+    headerResult: "✨ Result",
+    labelResultText: "Result",
+    labelResultSub: "(Click to expand)",
+    btnDownload: "💾 Download GIF",
+    headerHand: "⚙️ Settings: Hand Edit",
+    labelHandMode: "Hand Mode",
+    modeBoth: "Both",
+    modeLeft: "Left",
+    modeRight: "Right",
+    labelX: "Horizontal",
+    labelY: "Vertical",
+    labelRot: "Rotation",
+    labelSize: "Finger Size",
+    headerImage: "🎨 Settings: Image Effect",
+    labelSpeed: "Poke Frequency (Speed)",
+    labelSquish: "Squish & Shake",
+    btnGen: "🎨 Generate GIF",
+    btnRestart: "🔄 Restart",
+    loadingText: "Processing...",
+    cropTitle: "Crop your image",
+    btnCropConfirm: "Confirm Crop",
+    iosTip: "iOS: Use Safari for animation / Click outside to close",
+    failMsg: "Failed to generate GIF. Please check your connection."
+  }
+};
+
+let currentLang = 'zh-TW';
+
+function switchLang() {
+  currentLang = (currentLang === 'zh-TW') ? 'en' : 'zh-TW';
+  const elements = document.querySelectorAll('[data-i18n]');
+  elements.forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[currentLang][key]) {
+      el.innerText = i18n[currentLang][key];
+    }
+  });
+  // 同步更新 HTML 的 lang 屬性
+  document.documentElement.lang = currentLang;
+}
+
+// --- 以下為原始邏輯 ---
+
 let userImg = null;
 let cropper = null;
 let animReq = null;
@@ -414,22 +516,18 @@ function toggleMenu(open) {
   document.querySelector('.menu-overlay').style.display = open ? 'block' : 'none';
 }
 
-// 修改：開啟大圖層
 function openImageInNewTab() {
   if (currentGifBlobUrl) {
     const modal = document.getElementById("imageModal");
     const modalImg = document.getElementById("modalImg");
     modal.style.display = "block";
     modalImg.src = currentGifBlobUrl;
-    // 禁止背景捲動
     document.body.style.overflow = "hidden";
   }
 }
 
-// 新增：關閉大圖層
 function closeModal() {
   document.getElementById("imageModal").style.display = "none";
-  // 恢復背景捲動
   document.body.style.overflow = "auto";
 }
 
@@ -607,7 +705,7 @@ async function generateGif() {
     gif.render();
   } catch(e) {
     console.error(e);
-    alert("GIF 生成失敗，請檢查網路連線後重試。");
+    alert(i18n[currentLang].failMsg);
     genBtn.disabled = false;
     loader.style.display = 'none';
   }
